@@ -374,4 +374,4 @@ def playGame(training = True):
         game.end()
 
 # init_cache()             # Must be called to create cache file(INIT log file)
-playGame(training = False); # Change True to False to run program without training
+playGame(training = True); # Change True to False to run program without training
