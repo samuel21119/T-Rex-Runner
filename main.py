@@ -264,7 +264,7 @@ def trainNetwork(model, game_state, training = True, observe=False):
         a_t = np.zeros([ACTIONS])
         # Choose an action
         if t % FRAME_PER_ACTION == 0:
-            if  random.random() <= epsilon * 0: # Random action
+            if  random.random() <= epsilon * int(training): # Random action
                 prRed("----------Random Action----------")
                 print_red = 1
                 action_index = random.randrange(ACTIONS)
