@@ -1,0 +1,6 @@
+numpy
+Pillow
+opencv
+pandas
+selenium
+tensorflow
