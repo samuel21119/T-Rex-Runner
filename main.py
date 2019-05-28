@@ -20,6 +20,8 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 
+import tensorflow as tf
+
 #keras imports
 from tensorflow.keras.models import model_from_json, Sequential
 from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten
@@ -55,6 +57,12 @@ loss_file_path = "./objects/loss_df.csv"
 actions_file_path = "./objects/actions_df.csv"
 q_value_file_path = "./objects/q_values.csv"
 scores_file_path = "./objects/scores_df.csv"
+
+
+# Tensorflow-gpu
+gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.7)
+sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+
 
 # Scripts
 init_script = "document.getElementsByClassName('runner-canvas')[0].id = 'runner-canvas'"
@@ -111,8 +119,6 @@ class DinoAgent:
         return self._game.get_crashed()
     def jump(self):
         self._game.press_up()
-    def duck(self):
-        self._game.press_down()
 
 def prRed(string): print("\033[91m{}\033[00m".format(string)) 
 
@@ -162,9 +168,6 @@ def process_img(image):
     return  image
 
 def show_img(graphs = False):
-    """
-    Show images in new window
-    """
     while True:
         screen = (yield)
         window_title = "logs" if graphs else "game_play"
@@ -186,11 +189,11 @@ def init_cache():
     save_obj(INITIAL_EPSILON,"epsilon")
     t = 0
     save_obj(t,"time")
-    D = deque()
-    save_obj(D,"D")
+    Log = deque()
+    save_obj(Log,"Log")
 
 def buildmodel():
-    print("Building the model")
+    print("=======Building the model=======")
     model = Sequential()
     model.add(Conv2D(32, (8, 8), padding='same',strides=(4, 4),input_shape=(img_cols,img_rows,img_channels)))  #80*80*4
     model.add(MaxPooling2D(pool_size=(2, 2)))
@@ -211,7 +214,7 @@ def buildmodel():
     # Create model file if dosen't exist
     if not os.path.isfile(loss_file_path):
         model.save_weights('./objects/model.h5')
-    print("We finish building the model")
+    print("=======Finish building the model=======")
     return model
 
 def get_fps(pre, now):
@@ -220,7 +223,7 @@ def get_fps(pre, now):
 def trainNetwork(model, game_state, training = True, observe=False):
     last_time = time.time()
     # Store the previous observations in replay memory
-    D = load_obj("D") #load from file system
+    Log = load_obj("Log") #load from file system
     # Get the first state by doing nothing
     do_nothing = np.zeros(ACTIONS)
     do_nothing[0] = 1 # 0 => do nothing,
@@ -240,7 +243,7 @@ def trainNetwork(model, game_state, training = True, observe=False):
     if observe :
         OBSERVE = 999999999    # Keep observe, never train
         epsilon = FINAL_EPSILON
-        print ("Loading weight")
+        print ("=======Loading weight=======")
         model.load_weights("./objects/model.h5")
         adam = Adam(lr=LEARNING_RATE)
         model.compile(loss='mse',optimizer=adam)
@@ -253,6 +256,7 @@ def trainNetwork(model, game_state, training = True, observe=False):
         model.compile(loss='mse',optimizer=adam)
 
     t = load_obj("time") # Resume from the previous time step stored in file system
+    tt = t
     last_score = 0;
     while (True):
         
@@ -288,16 +292,16 @@ def trainNetwork(model, game_state, training = True, observe=False):
         s_t1 = np.append(x_t1, s_t[:, :, :, :3], axis=3) # Update image array
         
         
-        # Store the transition in D
-        D.append((s_t, action_index, r_t, s_t1, terminal))
-        if len(D) > REPLAY_MEMORY:
-            D.popleft()
+        # Store the transition in Log
+        Log.append((s_t, action_index, r_t, s_t1, terminal))
+        if len(Log) > REPLAY_MEMORY:
+            Log.popleft()
         # time.sleep(.04)
         # Train if done observing
         if t > OBSERVE: 
             
             # Sample a minibatch to train
-            minibatch = random.sample(D, BATCH)
+            minibatch = random.sample(Log, BATCH)
             inputs = np.zeros((BATCH, s_t.shape[1], s_t.shape[2], s_t.shape[3]))   #32, 20, 40, 4
             targets = np.zeros((inputs.shape[0], ACTIONS))                         #32, 2
 
@@ -331,7 +335,7 @@ def trainNetwork(model, game_state, training = True, observe=False):
             print("Saving model")
             game_state._game.pause() # Pause game while saving to filesystem
             model.save_weights("./objects/model.h5", overwrite=True)
-            save_obj(D, "D") # Savie episodes
+            save_obj(Log, "Log") # Savie episodes
             save_obj(t, "time") # Cache time steps
             save_obj(epsilon, "epsilon") # Cache epsilon to avoid repeated randomness in actions
             loss_df.to_csv("./objects/loss_df.csv", index = False)
@@ -341,10 +345,10 @@ def trainNetwork(model, game_state, training = True, observe=False):
             with open("./objects/model.json", "w") as outfile:
                 json.dump(model.to_json(), outfile)
             # clear_output()
-            os.system('clear')
+            # os.system('clear')
             game_state._game.resume()
 
-        # print info
+        # Print info
         state = ""
         if t <= OBSERVE:
             state = "observe"
@@ -359,7 +363,9 @@ def trainNetwork(model, game_state, training = True, observe=False):
             prRed(string)
         else:
             print(string)
-    print("Finished!")
+
+    print("************************")
+    print("*       Finished!      *")
     print("************************")
 
 #main function
@@ -373,5 +379,5 @@ def playGame(training = True):
     except StopIteration:
         game.end()
 
-# init_cache()             # Must be called to create cache file(INIT log file)
+#init_cache()             # Must be called to create cache file(INIT log file)
 playGame(training = True); # Change True to False to run program without training
