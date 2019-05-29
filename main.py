@@ -60,8 +60,8 @@ scores_file_path = "./objects/scores_df.csv"
 
 
 # Tensorflow-gpu
-gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.7)
-sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+# gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.7)
+# sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
 
 
 # Scripts
@@ -380,4 +380,4 @@ def playGame(training = True):
         game.end()
 
 #init_cache()             # Must be called to create cache file(INIT log file)
-playGame(training = True); # Change True to False to run program without training
+playGame(training = False); # Change True to False to run program without training
