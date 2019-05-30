@@ -27,7 +27,6 @@ from tensorflow.keras.optimizers import SGD , Adam
 from tensorflow.keras.callbacks import TensorBoard
 
 
-
 # Parameters
 TRAINING = True # Change True to False to run program without training
 ACTIONS = 2 # 0: forward; 1: jump
@@ -43,7 +42,7 @@ FPS_LIMIT = 7.6
 LEARNING_RATE = 1e-4
 IMG_ROWS , IMG_COLS = 80, 80
 IMG_STACK = 4 # Stack 4 frames
-TENSORFLOW_GPU = False
+TENSORFLOW_GPU = True
 
 # Path variables
 game_url = 'file://' + str(Path().absolute()) + '/game/index.html'
@@ -108,7 +107,7 @@ class DinoAgent:
         self._game.press_up()
 
 class Game_sate:
-    def __init__(self, agent,game):
+    def __init__(self, agent, game):
         self._agent = agent
         self._game = game
         self._display = show_img() # Display the processed image on screen using openCV
@@ -149,11 +148,10 @@ def grab_screen(driver):
     return image
 
 def process_img(image):
-    
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) # RGB to Grey Scale
-    image = image[:300, :500] # Crop Region of Interest(ROI)
-    image = cv2.resize(image, (80, 80))
-    return  image
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) # RGB to Grey
+    image = image[:300, :500] # Crop
+    image = cv2.resize(image, (IMG_ROWS, IMG_COLS))
+    return image
 
 def show_img(graphs = False):
     while True:
@@ -209,7 +207,7 @@ def buildmodel():
 def get_fps(pre, now):
     return 1 / (now - pre)
 
-def trainNetwork(model, game_state, training = True):
+def trainNetwork(model, game_state, training, session = None):
     observe = not training
     last_time = time.time()
     # Store the previous observations in replay memory
@@ -346,20 +344,19 @@ def trainNetwork(model, game_state, training = True):
     print("*           Finished!         *")
     print("*******************************")
 
-def playGame(training = True):
+def playGame(training, session):
     game = Game()
     dino = DinoAgent(game)
     game_state = Game_sate(dino, game)    
     model = buildmodel()
     try:
-        trainNetwork(model, game_state, training = training)
+        trainNetwork(model, game_state, training, session = session)
     except:
         game.end()
 
 if __name__ == "__main__":
     # Tensorflow-gpu
     if TENSORFLOW_GPU:
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction = 0.7)
-        sess = tf.Session(config = tf.ConfigProto(gpu_options = gpu_options))
-
-    playGame(training = TRAINING);
+        playGame(TRAINING, tf.Session(config = tf.ConfigProto(gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction = 0.7))))
+    else:
+        playGame(TRAINING, None)
