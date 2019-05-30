@@ -1,5 +1,13 @@
 # Chome T-Rex Runner (Tensorflow-keras)
 
- - Please unzip `objects.zip` first.  
- - Please run init.sh to remove pretrained data.  
- - In the first execution of `main.py`, please call `init_cache()` to create cache file.  
+# Initial files
+
+Run `init.py` to initial files for training.  
+
+# Training
+
+Change TRAINING to true in `main.py` to start training.
+
+# Run existing model
+
+Change TRAINING to false in `main.py`to run existing model without training.  
