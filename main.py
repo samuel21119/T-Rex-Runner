@@ -42,7 +42,8 @@ FPS_LIMIT = 7.6
 LEARNING_RATE = 1e-4
 IMG_ROWS , IMG_COLS = 80, 80
 IMG_STACK = 4 # Stack 4 frames
-TENSORFLOW_GPU = True
+TENSORFLOW_GPU = False
+GPU_MEMORY = 0.7
 
 # Path variables
 game_url = 'file://' + str(Path().absolute()) + '/game/index.html'
@@ -357,6 +358,5 @@ def playGame(training, session):
 if __name__ == "__main__":
     # Tensorflow-gpu
     if TENSORFLOW_GPU:
-        playGame(TRAINING, tf.Session(config = tf.ConfigProto(gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction = 0.7))))
-    else:
-        playGame(TRAINING, None)
+        session = tf.Session(config = tf.ConfigProto(gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction = GPU_MEMORY)))
+    playGame(TRAINING, None)
